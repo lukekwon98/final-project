@@ -273,13 +273,16 @@ function main() {
     ]);
 
     //cloud pass
+    const viewProj = mat4.multiply(mat4.create(), camera.projectionMatrix, camera.viewMatrix);
+    const invViewProj = mat4.invert(mat4.create(), viewProj);
+
     cloudTarget.bind();
     gl.disable(gl.DEPTH_TEST);
+    clouds.setMat4('u_InvViewProj', invViewProj);
+    clouds.setVec3('u_CameraPos', camera.position);
     clouds.draw(screenQuad);
 
     //pass2 composite -> canvas
-    const viewProj = mat4.multiply(mat4.create(), camera.projectionMatrix, camera.viewMatrix);
-
     RenderTarget.bindScreen(canvas.width, canvas.height); //back to the canvas
     gl.disable(gl.DEPTH_TEST); //no depth test needed for full screen quad
 
@@ -289,7 +292,7 @@ function main() {
     composite.setTexture('u_BlueNoise', 2, blueNoise);
     composite.setTexture('u_Clouds', 3, cloudTarget.texture()); // premultiplied cloud color + opacity
 
-    composite.setMat4('u_InvViewProj', mat4.invert(mat4.create(), viewProj));
+    composite.setMat4('u_InvViewProj', invViewProj);
     composite.setFloat('u_Exposure', controls.Exposure);
     composite.setInt('u_Tonemap', TONEMAPS[controls.Tonemap]);
 //    composite.setInt('u_DebugView', DEBUG_VIEWS[controls.DebugView]);

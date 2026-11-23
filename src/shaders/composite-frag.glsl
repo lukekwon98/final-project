@@ -73,8 +73,8 @@ void main(){
     }
 
     vec3 scene = texture(u_Scene, fs_UV).rgb;
-    //vec4 cloud = texture(u_Clouds, fs_UV);
-    vec3 hdr = scene;// (scene * (1.0 - cloud.a) + cloud.rgb) * u_Exposure;
+    vec4 cloud = texture(u_Clouds, fs_UV);
+    vec3 hdr = (scene * (1.0 - cloud.a) + cloud.rgb) * u_Exposure;
 
     vec3 col;
     if(u_Tonemap == 2){
