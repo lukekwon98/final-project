@@ -1,5 +1,7 @@
 import {gl} from '../globals';
 
+//2 lookup textures
+
 //Build 256x256 RGBA noise texture read by noise.glsl
 //R - ranbdom value, G - R shifted by 37, 17: one lookup returns two neighbouring z slices
 export function createNoiseTexture(): WebGLTexture{
@@ -17,7 +19,7 @@ export function createNoiseTexture(): WebGLTexture{
     for(let y = 0; y < N; y++){
         for(let x = 0; x < N; x++){
             const i = y * N + x;
-            const shifted = ((y - 239 +N) % N) * N + ((x-37 + N) % N);
+            const shifted = ((y - 239 +N) % N) * N + ((x-37 + N) % N); // G is R shifted by 37, 239, with wrap around
 
             data[i*4+0] = red[i];
             data[i*4+1] = red[shifted];
@@ -37,6 +39,7 @@ export function createNoiseTexture(): WebGLTexture{
     return tex;
 }
 
+//load blue noise
 export function loadBlueNoise(url: string): WebGLTexture{
     const tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);

@@ -205,15 +205,17 @@ void main()
     }
 
 
-    //light disc + glow
+    //sun shader
+    //get angle between pixel and center of sun
     float angle = acos(clamp(dot(dir, u_LightDir), -1.0, 1.0)); //Angle between the pixel's view direction and the light direction (0 = looking straight at the light) 
 
+    //LightSize: 1.5 degrees, anything below 1.275 (close) is 0, so disc is 1. anything between 1.275 and 1.5 gradually decreases, anything bigger than 1.5 is 1, disc becomes 0
     float disc = 1.0 - smoothstep(u_LightSize * 0.85, u_LightSize, angle); // Disc - 1 inside the light's radius, 0 outside, with a slightly soft edge
 
     float glow = exp(-angle/(u_LightSize*1.5)) + 0.15 * exp(-angle/(u_LightSize*12.0)); //Glow - 2 exponential falloffs. 1: tight corona hugging the disc, 2: broad, faint halo (god rays will name lights around the disc)
 
-    // hide stars/nebula behind the disc, then add disc + glow on top
-    FragColor.rgb = FragColor.rgb * (1.0 - disc) + u_LightColor * u_LightIntensity * (disc + 0.1 * u_LightGlow * glow);
+    // hide stars/nebula behind the disc, then add disc + glow on top (FragColor.rgb is the original background)
+    FragColor.rgb = FragColor.rgb*(1.0 - disc) + u_LightColor*u_LightIntensity*(disc + 0.1 * u_LightGlow * glow); //0.1 to keep glow weaker than the disc
 
     out_Col = FragColor;
 }

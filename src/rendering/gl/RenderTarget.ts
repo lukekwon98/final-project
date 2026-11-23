@@ -1,6 +1,7 @@
 import {gl} from '../../globals';
 
-//pixelf ormat of one color texture
+//webgl2 fundamentals
+//pixel format of one color texture
 export interface ColorSpec{
     internalFormat: number; //how the GPU stores it
     format: number; //channel layout
@@ -10,7 +11,7 @@ export interface ColorSpec{
 
 //RGBA half float - HDR values
 export const hdrColor = (): ColorSpec =>
-  ({internalFormat: gl.RGBA16F,
+  ({internalFormat: gl.RGBA16F, //16 bit float per channel, can store values above 1
     format: gl.RGBA, 
     type: gl.HALF_FLOAT, 
     filter: gl.LINEAR});
@@ -35,11 +36,10 @@ export default class RenderTarget{
     width = 0;
     height = 0;
 
-
+    //creates color textures + depth if requested
     constructor(private specs: ColorSpec[], withDepth: boolean, public scale = 1.0){
         this.colors = specs.map(s => makeTex(s.filter));
         this.depth = withDepth ? makeTex(gl.NEAREST) : null;
-
     }
 
     //reallocates texture storage at the new size and attaches it to the framebuffer
@@ -68,7 +68,7 @@ export default class RenderTarget{
             gl.framebufferTexture2D( gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.depth, 0);
         }
 
-        //route fragment shader aoutputs to the attachments(location 0 -> attachment 0, etc)
+        //route fragment shader outputs to the attachments(location 0 -> attachment 0, etc)
         gl.drawBuffers(bufs);
 
         //Fails if a format isn't renderable

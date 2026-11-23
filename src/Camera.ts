@@ -32,11 +32,13 @@ class Camera {
     window.addEventListener('keyup',   (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('blur',    () => this.keys.clear());
     
-    canvas.addEventListener('click', () => canvas.requestPointerLock());
+    let dragging = false;
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // stop the browser's right-click menu
+    canvas.addEventListener('mousedown', (e) => { if (e.button === 0) dragging = true; }); //2 = right button
+    window.addEventListener('mouseup',   (e) => { if (e.button === 0) dragging = false; });
+    window.addEventListener('blur', () => { dragging = false; });
     document.addEventListener('mousemove', (e) => {
-      if (document.pointerLockElement === canvas){
-        this.rotateCamera(e.movementX * this.sensitivity, e.movementY * this.sensitivity);
-      }
+      if (dragging) this.rotateCamera(e.movementX * this.sensitivity, e.movementY * this.sensitivity);
     });
 
     this.rotateCamera(0,0);
