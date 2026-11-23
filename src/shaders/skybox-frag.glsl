@@ -21,6 +21,12 @@ uniform float u_Speed;
 uniform float u_Length;
 uniform float u_ColorTransition;
 
+uniform vec3 u_LightDir;
+uniform vec3 u_LightColor;
+uniform float u_LightIntensity;
+uniform float u_LightSize; //angula radius of disc in radians
+uniform float u_LightGlow; //strength of halo
+
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
 in vec4 fs_Nor;
@@ -197,6 +203,17 @@ void main()
         }
         FragColor = vec4(starColor * starBrightness, 1.0);
     }
+
+
+    //light disc + glow
+    float angle = acos(clamp(dot(dir, u_LightDir), -1.0, 1.0)); //Angle between the pixel's view direction and the light direction (0 = looking straight at the light) 
+
+    float disc = 1.0 - smoothstep(u_LightSize * 0.85, u_LightSize, angle); // Disc - 1 inside the light's radius, 0 outside, with a slightly soft edge
+
+    float glow = exp(-angle/(u_LightSize*1.5)) + 0.15 * exp(-angle/(u_LightSize*12.0)); //Glow - 2 exponential falloffs. 1: tight corona hugging the disc, 2: broad, faint halo (god rays will name lights around the disc)
+
+    // hide stars/nebula behind the disc, then add disc + glow on top
+    FragColor.rgb = FragColor.rgb * (1.0 - disc) + u_LightColor * u_LightIntensity * (disc + 0.1 * u_LightGlow * glow);
 
     out_Col = FragColor;
 }

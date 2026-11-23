@@ -167,6 +167,33 @@ class ShaderProgram {
     }
   }
 
+  setFloat(name: string, v: number) {
+    this.use();
+    gl.uniform1f(gl.getUniformLocation(this.prog, name), v);
+  }
+  setInt(name: string, v: number) {
+    this.use();
+    gl.uniform1i(gl.getUniformLocation(this.prog, name), v);
+  }
+  setVec2(name: string, x: number, y: number) {
+    this.use();
+    gl.uniform2f(gl.getUniformLocation(this.prog, name), x, y);
+  }
+  setVec3(name: string, v: vec3) {
+    this.use();
+    gl.uniform3fv(gl.getUniformLocation(this.prog, name), v);
+  }
+  setMat4(name: string, m: mat4) {
+    this.use();
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, name), false, m);
+  }
+  setTexture(name: string, unit: number, tex: WebGLTexture, target: number = gl.TEXTURE_2D) {
+    this.use();
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(target, tex);
+    gl.uniform1i(gl.getUniformLocation(this.prog, name), unit);
+  }
+
   draw(d: Drawable) {
     this.use();
 
