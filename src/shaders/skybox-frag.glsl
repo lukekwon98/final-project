@@ -170,6 +170,12 @@ vec3 BWRPalette(float t) {
     return palette(t, v1, v2, v3, v4);
 }
 
+float henyeyGreenstein(float cosTheta, float g) {
+    float g2 = g * g;
+    float denom = max(1.0 + g2 - 2.0 * g * cosTheta, 1e-5);
+    return (1.0 - g2) / (12.56637061 * denom * sqrt(denom));
+}
+
 void main()
 {
     //Background
@@ -203,6 +209,7 @@ void main()
         }
         FragColor = vec4(starColor * starBrightness, 1.0);
     }
+    //FragColor.rgb = max(FragColor.rgb, vec3(0.0)); //clamp to prevent negative values
 
 
     //sun shader
@@ -211,8 +218,11 @@ void main()
 
     //LightSize: 1.5 degrees, anything below 1.275 (close) is 0, so disc is 1. anything between 1.275 and 1.5 gradually decreases, anything bigger than 1.5 is 1, disc becomes 0
     float disc = 1.0 - smoothstep(u_LightSize * 0.85, u_LightSize, angle); // Disc - 1 inside the light's radius, 0 outside, with a slightly soft edge
-
+    
     float glow = exp(-angle/(u_LightSize*1.5)) + 0.15 * exp(-angle/(u_LightSize*12.0)); //Glow - 2 exponential falloffs. 1: tight corona hugging the disc, 2: broad, faint halo (god rays will name lights around the disc)
+    //float glow = pow(max(dot(dir, u_LightDir), 0.0), 64.0) + 0.15 * pow(max(dot(dir, u_LightDir), 0.0), 4.0); //kelvin van hoorn's sun shader 
+    //float glow = henyeyGreenstein(dot(dir, u_LightDir), 0.8); // physically based glow (replaces the two exp falloffs)
+
 
     // hide stars/nebula behind the disc, then add disc + glow on top (FragColor.rgb is the original background)
     FragColor.rgb = FragColor.rgb*(1.0 - disc) + u_LightColor*u_LightIntensity*(disc + 0.1 * u_LightGlow * glow); //0.1 to keep glow weaker than the disc

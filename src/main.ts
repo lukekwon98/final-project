@@ -22,6 +22,8 @@ import {createNoiseTexture, loadBlueNoise} from './rendering/NoiseTextures';
 //full sreen pass shaders
 import fullscreenVert from './shaders/fullscreen-vert.glsl?raw';
 import compositeFrag from './shaders/composite-frag.glsl?raw';
+//cloud
+import cloudsFrag from './shaders/cloud-frag.glsl?raw';
 
 
 // Define an object with application parameters and button callbacks
@@ -50,7 +52,7 @@ const controls = {
 
   Exposure: 1.0, //hdr multiplier before ton emapping
   Tonemap: 'ACES',
-  DebugView: 'Final',
+  //DebugView: 'Final',
 };
 
 let controllers: DAT.GUIController[] = [];
@@ -130,7 +132,7 @@ function main() {
   const renderFolder = gui.addFolder('Render');
   renderFolder.add(controls, 'Exposure', 0, 5);
   renderFolder.add(controls, 'Tonemap', Object.keys(TONEMAPS)); //dropdown
-  renderFolder.add(controls, 'DebugView', Object.keys(DEBUG_VIEWS));
+  //renderFolder.add(controls, 'DebugView', Object.keys(DEBUG_VIEWS));
 
   const cometFolder = gui.addFolder('Comet');
   controllers.push(cometFolder.add(controls, 'tesselations', 0, 8).step(1));
@@ -165,6 +167,8 @@ function main() {
 
   //offscreen framebuffer of HDR type - for skybox and comet, need depth for comet
   const sceneTarget = new RenderTarget([hdrColor()], true);
+  //HDR cloud, no depth
+  const cloudTarget = new RenderTarget([hdrColor()], false);
 
   //computed and loaded noise textures. built/loaded once, sampled every frame
   const noiseTex = createNoiseTexture();
@@ -193,6 +197,12 @@ function main() {
   const composite = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, fullscreenVert),
     new Shader(gl.FRAGMENT_SHADER, compositeFrag),
+  ]);
+
+  //cloud pass
+  const clouds = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, fullscreenVert),
+    new Shader(gl.FRAGMENT_SHADER, cloudsFrag),
   ]);
 
   let time = 0;
@@ -229,7 +239,6 @@ function main() {
       skybox
     );
 
-
     // Fireball
     const now = performance.now();
     const dt = Math.min((now - lastTime) / 1000, 0.1);
@@ -263,6 +272,11 @@ function main() {
       //cube,
     ]);
 
+    //cloud pass
+    cloudTarget.bind();
+    gl.disable(gl.DEPTH_TEST);
+    clouds.draw(screenQuad);
+
     //pass2 composite -> canvas
     const viewProj = mat4.multiply(mat4.create(), camera.projectionMatrix, camera.viewMatrix);
 
@@ -273,11 +287,12 @@ function main() {
     composite.setTexture('u_Scene', 0, sceneTarget.texture());
     composite.setTexture('u_Noise', 1, noiseTex);
     composite.setTexture('u_BlueNoise', 2, blueNoise);
+    composite.setTexture('u_Clouds', 3, cloudTarget.texture()); // premultiplied cloud color + opacity
 
     composite.setMat4('u_InvViewProj', mat4.invert(mat4.create(), viewProj));
     composite.setFloat('u_Exposure', controls.Exposure);
     composite.setInt('u_Tonemap', TONEMAPS[controls.Tonemap]);
-    composite.setInt('u_DebugView', DEBUG_VIEWS[controls.DebugView]);
+//    composite.setInt('u_DebugView', DEBUG_VIEWS[controls.DebugView]);
     composite.setFloat('u_Time', time);
     composite.setVec2('u_Resolution', canvas.width, canvas.height);
     composite.draw(screenQuad);
@@ -293,6 +308,7 @@ function main() {
     camera.setAspectRatio(window.innerWidth/window.innerHeight);
     camera.updateProjectionMatrix();
     sceneTarget.resize(canvas.width,canvas.height);
+    cloudTarget.resize(canvas.width, canvas.height); //keep the cloud texture the same size as the screen
   }
   window.addEventListener('resize', onResize);
   onResize();

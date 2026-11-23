@@ -14,6 +14,7 @@ uniform vec2 u_Resolution;
 
 uniform mat4 u_InvViewProj;
 uniform sampler2D u_Noise;
+uniform sampler2D u_Clouds; //premultiplied clouds, rgba
 
 //maxime heckel - 3D value noise using one lookup into a '2D' texture
 //each integer z is a 2D slice placed at offset (37, 17) *z in the texture
@@ -71,7 +72,10 @@ void main(){
         return;
     }
 
-    vec3 hdr = texture(u_Scene, fs_UV).rgb * u_Exposure;
+    vec3 scene = texture(u_Scene, fs_UV).rgb;
+    //vec4 cloud = texture(u_Clouds, fs_UV);
+    vec3 hdr = scene;// (scene * (1.0 - cloud.a) + cloud.rgb) * u_Exposure;
+
     vec3 col;
     if(u_Tonemap == 2){
         col = acesFilm(hdr);
