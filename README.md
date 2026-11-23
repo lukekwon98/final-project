@@ -30,18 +30,15 @@ A visually compelling night skybox involving stars, aurora, volumetric clouds, v
 - SDF landscapes (https://www.shadertoy.com/view/4ttSWf, https://www.shadertoy.com/view/MdX3Rr)
 
 #### Design:
-Stars and nebulae in the far background -> Aurora borealis in the background -> Clouds in front of the aurora -> A moon producing volumetric lighting effects -> a SDF landscape drawn on the lower half of the scene.
+Stars and nebulae in the far background -> Clouds in front of the sun/moon -> A sun/moon producing volumetric lighting effects -> a SDF landscape drawn on the lower half of the scene.
 
 #### Timeline:
 - Week1: Porting in basecode from hw01
-- Week2: Volumetric clouds (froxels?)
+- Week2: Volumetric clouds
 - Week3: Volumetric lighting
 - Stretch: IG style cool SDF landscape + volumetric shadowmap
 
-Submit your Design doc as usual via pull request against this repository.
 # Milestone #1
-
-Put all your code in your forked repository.
 
 ## Progress
 - Ported in code from the fireball homework to use as the base scene of the project
@@ -51,17 +48,24 @@ Put all your code in your forked repository.
 
 <img width="1725" height="892" alt="Screenshot 2026-11-11 at 7 32 56 PM" src="https://github.com/user-attachments/assets/7a77bb4d-2d21-43d4-9691-0467c800b1e4" />
 
-## Milestone 2: Implementation part 2 (due 11/23)
-We're over halfway there! This week should be about fixing bugs and extending the core of your generator. Make sure by the end of this week _your generator works and is feature complete._ Any core engine features that don't make it in this week should be cut! Don't worry if you haven't managed to exactly hit your goals. We're more interested in seeing proof of your development effort than knowing your planned everything perfectly. 
+# Milestone 2
 
-Put all your code in your forked repository.
+## Progress
 
-Submission: Add a new section to your README titled: Milestone #3, which should include
-- written description of progress on your project goals. If you haven't hit all your goals, what did you have to cut and why? 
-- Detailed output from your generator, images, video, etc.
-We'll check your repository for updates. No need to create a new pull request.
+<img width="1728" height="912" alt="Screenshot 2026-11-23 at 12 17 46 PM" src="https://github.com/user-attachments/assets/bea69d5b-4780-4152-8c19-21b97053e135" />
 
-Come to class on the due date with a WORKING COPY of your project. We'll be spending time in class critiquing and reviewing your work so far.
+<img width="1728" height="915" alt="Screenshot 2026-11-23 at 12 16 50 PM" src="https://github.com/user-attachments/assets/48cf239f-360f-445d-8da7-5b0fb68b21d9" />
+
+<img width="1726" height="895" alt="Screenshot 2026-11-23 at 12 18 52 PM" src="https://github.com/user-attachments/assets/b8953968-02fa-4c5a-a410-b7b691d8eee7" />
+
+- Built a post-process rendering pipeline supporting HDR
+  - The skybox and comet render into a floating point render target, clouds render into their own target, and a final pass combines them onto the screen
+- Added ACES filmic and Reinhard tone mapping
+- Added a sun to the skybox shader with an exponential glow, controlled through spherical coordinates and color, intensity, size and glow sliders
+- Generated a noise texture for fast 3D value noise
+- Started the volumetric cloud pass following [Maxime Heckel's blog post](https://blog.maximeheckel.com/posts/real-time-cloudscapes-with-volumetric-raymarching/):
+  - Fixed-step volumetric raymarching through a sphere SDF, using negated SDF distance as density and front to back alpha accumulation
+  - FBM noise added to the density and animated over time to create a drifting cloud shape
 
 ## Final submission (due 11/30)
 Time to polish! Spen this last week of your project using your generator to produce beautiful output. Add textures, tune parameters, play with colors, play with camera animation. Take the feedback from class critques and use it to take your project to the next level.
