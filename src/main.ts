@@ -280,6 +280,8 @@ function main() {
     gl.disable(gl.DEPTH_TEST);
     clouds.setMat4('u_InvViewProj', invViewProj);
     clouds.setVec3('u_CameraPos', camera.position);
+    clouds.setTexture('u_Noise', 0, noiseTex);
+    clouds.setFloat('u_Time', time / 60.0);
     clouds.draw(screenQuad);
 
     //pass2 composite -> canvas
