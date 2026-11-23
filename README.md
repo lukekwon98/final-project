@@ -59,7 +59,7 @@ Stars and nebulae in the far background -> Clouds in front of the sun/moon -> A 
 <img width="1726" height="895" alt="Screenshot 2026-11-23 at 12 18 52 PM" src="https://github.com/user-attachments/assets/b8953968-02fa-4c5a-a410-b7b691d8eee7" />
 
 - Built a post-process rendering pipeline supporting HDR
-  - The skybox and comet render into a floating point render target, clouds render into their own target, and a final pass combines them onto the screen
+  - The skybox and comet render into a half-float render target, clouds render into their own target, and a final pass combines them onto the screen
 - Added ACES filmic and Reinhard tone mapping
 - Added a sun to the skybox shader with an exponential glow, controlled through spherical coordinates and color, intensity, size and glow sliders
 - Generated a noise texture for fast 3D value noise
