@@ -88,6 +88,7 @@ let square: Square;
 let prevTesselations: number = 5;
 let cube: Cube;
 
+const SHOW_COMET = false;
 const cometFront = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.15, 0));
 const cometStart = vec3.fromValues(-250, 175, -300);
 let cometPos = vec3.clone(cometStart);
@@ -150,17 +151,19 @@ function main() {
   renderFolder.add(controls, 'Tonemap', Object.keys(TONEMAPS)); //dropdown
   //renderFolder.add(controls, 'DebugView', Object.keys(DEBUG_VIEWS));
 
-  const cometFolder = gui.addFolder('Comet');
-  controllers.push(cometFolder.add(controls, 'tesselations', 0, 8).step(1));
-  controllers.push(cometFolder.addColor(controls, 'Base'));
-  controllers.push(cometFolder.addColor(controls, 'Variation'));
-  controllers.push(cometFolder.addColor(controls, 'Frequency'));
-  controllers.push(cometFolder.addColor(controls, 'Phase'));
-  controllers.push(cometFolder.add(controls, 'Length', -20, 20).step(0.1));
-  controllers.push(cometFolder.add(controls, 'ColorWave', 0, 0.2).step(0.01));
-  controllers.push(cometFolder.add(controls, 'CometSpeed', 0, 500).step(0.05));
-  controllers.push(cometFolder.add(controls, 'CometSize', 0.01, 1000).step(0.01));
-  cometFolder.add(controls, 'Reset Fireball');
+  if(SHOW_COMET){
+    const cometFolder = gui.addFolder('Comet');
+    controllers.push(cometFolder.add(controls, 'tesselations', 0, 8).step(1));
+    controllers.push(cometFolder.addColor(controls, 'Base'));
+    controllers.push(cometFolder.addColor(controls, 'Variation'));
+    controllers.push(cometFolder.addColor(controls, 'Frequency'));
+    controllers.push(cometFolder.addColor(controls, 'Phase'));
+    controllers.push(cometFolder.add(controls, 'Length', -20, 20).step(0.1));
+    controllers.push(cometFolder.add(controls, 'ColorWave', 0, 0.2).step(0.01));
+    controllers.push(cometFolder.add(controls, 'CometSpeed', 0, 500).step(0.05));
+    controllers.push(cometFolder.add(controls, 'CometSize', 0.01, 1000).step(0.01));
+    cometFolder.add(controls, 'Reset Fireball');
+  }
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -255,6 +258,7 @@ function main() {
       skybox
     );
 
+  if(SHOW_COMET){
     // Fireball
     const now = performance.now();
     const dt = Math.min((now - lastTime) / 1000, 0.1);
@@ -287,6 +291,7 @@ function main() {
       //square
       //cube,
     ]);
+  }
 
     //cloud pass
     const viewProj = mat4.multiply(mat4.create(), camera.projectionMatrix, camera.viewMatrix);
