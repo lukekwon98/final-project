@@ -2,7 +2,7 @@ import {gl} from '../globals';
 
 //2 lookup textures
 
-//Build 256x256 RGBA noise texture read by noise.glsl
+//Build 256x256 RGBA noise texture read by noise.glsl 
 //R - ranbdom value, G - R shifted by 37, 17: one lookup returns two neighbouring z slices
 export function createNoiseTexture(): WebGLTexture{
     const N = 256;

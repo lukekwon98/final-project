@@ -51,7 +51,14 @@ const controls = {
   LightGlow: 0.5, //halo strength
 
   Exposure: 1.0, //hdr multiplier before ton emapping
-  Tonemap: 'ACES',
+  Tonemap: 'None',
+
+  CloudAnisotropy: 0.8,
+  CloudAbsorption: 0.9,
+  CloudAmbientColor: [255, 255, 255],
+  CloudAmbientStrength: 0.025,
+  CloudLight: 1.0,
+  CloudNoiseScale: 1.0, // puff size
   //DebugView: 'Final',
 };
 
@@ -127,6 +134,15 @@ function main() {
   lightFolder.add(controls, 'LightIntensity', 0, 100);
   lightFolder.add(controls, 'LightSize', 0.1, 10);
   lightFolder.add(controls, 'LightGlow', 0, 5);
+
+  //Cloud look
+  const cloudFolder = gui.addFolder('Clouds');
+  cloudFolder.add(controls, 'CloudAnisotropy', -0.5, 0.99).step(0.01);
+  cloudFolder.add(controls, 'CloudAbsorption', 0.1, 5.0).step(0.01);
+  cloudFolder.addColor(controls, 'CloudAmbientColor');
+  cloudFolder.add(controls, 'CloudAmbientStrength', 0.0, 0.3).step(0.005);
+  cloudFolder.add(controls, 'CloudLight', 0.0, 10.0).step(0.1);
+  cloudFolder.add(controls, 'CloudNoiseScale', 0.2, 3.0).step(0.01);
 
   //Post processing and debug
   const renderFolder = gui.addFolder('Render');
@@ -282,6 +298,17 @@ function main() {
     clouds.setVec3('u_CameraPos', camera.position);
     clouds.setTexture('u_Noise', 0, noiseTex);
     clouds.setFloat('u_Time', time / 60.0);
+    clouds.setVec3('u_LightDir', lightDirection());
+    clouds.setVec3('u_LightColor', vec3.fromValues(lc[0]/255, lc[1]/255, lc[2]/255)); // same color as the sun disc
+    clouds.setTexture('u_BlueNoise', 1, blueNoise);
+    clouds.setInt('u_Frame', time);
+    const ac = controls.CloudAmbientColor;
+    clouds.setFloat('u_Aniso', controls.CloudAnisotropy);
+    clouds.setFloat('u_Absorption', controls.CloudAbsorption);
+    clouds.setVec3('u_AmbientColor', vec3.fromValues(ac[0]/255, ac[1]/255, ac[2]/255)); // 0..255 -> 0..1
+    clouds.setFloat('u_AmbientStrength', controls.CloudAmbientStrength);
+    clouds.setFloat('u_CloudLight', controls.CloudLight);
+    clouds.setFloat('u_NoiseScale', controls.CloudNoiseScale);
     clouds.draw(screenQuad);
 
     //pass2 composite -> canvas
