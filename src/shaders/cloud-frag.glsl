@@ -251,7 +251,7 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
         return vec4(vec3(a), a); //basic density blob
     }
     if(u_CloudDebug == 4){
-        return vec4(vec3(1.0 - totalTransmittance), 1.0 - totalTransmittance); //Beer's law opacity, white where opaque, see through where thin
+        return vec4(vec3(1.0 - totalTransmittance), 1.0 -totalTransmittance); //Beer's law opacity, white where opaque, see through where
     }
 
     return vec4(lightEnergy, 1.0-totalTransmittance);

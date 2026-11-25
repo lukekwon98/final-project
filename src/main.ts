@@ -89,7 +89,7 @@ let square: Square;
 let prevTesselations: number = 5;
 let cube: Cube;
 
-const SHOW_COMET = true;
+const SHOW_COMET = false;
 const cometFront = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.15, 0));
 const cometStart = vec3.fromValues(-250, 175, -300);
 let cometPos = vec3.clone(cometStart);
@@ -375,6 +375,7 @@ function main() {
     composite.setVec3('u_CameraPos', camera.position);
     composite.setVec3('u_LightDir', lightDirection());
     composite.setVec3('u_LightColor', vec3.fromValues(lc[0]/255, lc[1]/255, lc[2]/255));
+    composite.setMat4('u_LightViewProj', lightVP);
     composite.draw(screenQuad);
 
     stats.end();
