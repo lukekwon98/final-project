@@ -59,6 +59,7 @@ const controls = {
   CloudAmbientStrength: 0.025,
   CloudLight: 1.0,
   CloudNoiseScale: 1.0, // puff size
+  CloudDebug: 'Final',
   //DebugView: 'Final',
 };
 
@@ -96,6 +97,10 @@ let cometPos = vec3.clone(cometStart);
 //Dropdown label->int the shader switches on since GLSL has no strings
 const TONEMAPS: Record<string, number> = {'None': 0, 'ACES': 2, 'Reinhard': 3};
 const DEBUG_VIEWS: Record<string, number> = {'Final': 0, 'Noise texture': 2, 'Noise 3D': 3, 'Blue noise': 4};
+const CLOUD_DEBUG: Record<string, number> = {
+  'Final': 0, '1 SDF BB': 2, '2 Density': 3,
+  '3 Beer': 4, '4 Lightmarch': 5, '5 Phase (no ambient)': 6, '6 No blue noise': 7,
+};
 
 //Elevation/azimuth sliders to unit direction vector (spherical to cartesian)
 function lightDirection(): vec3{
@@ -158,6 +163,7 @@ function main() {
   cloudFolder.add(controls, 'CloudAmbientStrength', 0.0, 0.3).step(0.005);
   cloudFolder.add(controls, 'CloudLight', 0.0, 10.0).step(0.1);
   cloudFolder.add(controls, 'CloudNoiseScale', 0.2, 3.0).step(0.01);
+  cloudFolder.add(controls, 'CloudDebug', Object.keys(CLOUD_DEBUG));
 
   //Post processing and debug
   const renderFolder = gui.addFolder('Render');
@@ -336,6 +342,7 @@ function main() {
     clouds.setFloat('u_AmbientStrength', controls.CloudAmbientStrength);
     clouds.setFloat('u_CloudLight', controls.CloudLight);
     clouds.setFloat('u_NoiseScale', controls.CloudNoiseScale);
+      clouds.setInt('u_CloudDebug', CLOUD_DEBUG[controls.CloudDebug]);
     clouds.draw(screenQuad);
 
     //shadow pass: march density along sun rays into 256^2 map

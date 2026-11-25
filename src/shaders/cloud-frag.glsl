@@ -19,6 +19,7 @@ uniform float u_AmbientStrength;
 uniform float u_CloudLight;
 uniform float u_NoiseScale;
 uniform mat4 u_InvLightViewProj; //only for shadow pass
+uniform int u_CloudDebug;
 
 #define MAX_STEPS 100 // maxime
 #define MAX_STEPS_LIGHTS 6 // samples toward the sun
@@ -200,6 +201,10 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
     if(range.x > range.y){
         return vec4(0.0); //ray never touches the layer -> fully transparent
     }
+    if(u_CloudDebug == 2) { //render bounding box
+        return vec4(0.3);
+    }
+
 
     float t = range.x + MARCH_SIZE * offset;
     vec3 p = rayOrigin + t * rayDirection;
@@ -210,6 +215,9 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
     vec3 sunDirection = normalize(u_LightDir);
     float phase = HenyeyGreenstein(u_Aniso, dot(rayDirection, sunDirection));
 
+    //debug raw density from noise, no lighting
+    float densitySum = 0.0;
+
     for(int i = 0; i < MAX_STEPS; i++){
         if(t > range.y){ //t leaves range
             break;
@@ -218,9 +226,17 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
 
         //only draw density if it's greater than 0 (inside the sdf)
         if(density > 0.0){
+            densitySum += density * MARCH_SIZE;
             float lightTransmittance = lightmarch(p); //sunlight reaching this sample
             float transmittance = BeersLaw(density * MARCH_SIZE, u_Absorption); //view absorption
             vec3 luminance = (u_AmbientColor * u_AmbientStrength) + u_LightColor * u_CloudLight* density * lightTransmittance * phase; // ambient + sunlight x phase
+
+            if(u_CloudDebug == 5){
+                luminance = vec3(density * lightTransmittance); //light march step
+            }
+            if(u_CloudDebug == 6){
+                luminance = u_LightColor * u_CloudLight * density * lightTransmittance* phase; //Henyey with no ambient
+            }
 
             totalTransmittance *= transmittance; //oapcity along the view ray
             lightEnergy += totalTransmittance * luminance; //this step's light, dimmed by the cloud in front of it
@@ -228,6 +244,14 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
 
         t += MARCH_SIZE;
         p = rayOrigin + t * rayDirection;
+    }
+
+    float a = clamp(densitySum , 0.0, 1.0);
+    if(u_CloudDebug == 3) {
+        return vec4(vec3(a), a); //basic density blob
+    }
+    if(u_CloudDebug == 4){
+        return vec4(vec3(1.0 - totalTransmittance), 1.0 - totalTransmittance); //Beer's law opacity, white where opaque, see through where thin
     }
 
     return vec4(lightEnergy, 1.0-totalTransmittance);
@@ -271,6 +295,9 @@ void main(){
     ivec2 size = textureSize(u_BlueNoise, 0); //64 x 64
     float blueNoise = texelFetch(u_BlueNoise, ivec2(gl_FragCoord.xy) % size, 0).r; //one texel per pixel
     float offset = fract(blueNoise);
+    if(u_CloudDebug == 7){
+        offset = 0.0;
+    }
 
     out_Col = raymarch(rayOrig, rayDir, offset);
 
