@@ -18,6 +18,7 @@ uniform int u_Frame;
 uniform float u_AmbientStrength;
 uniform float u_CloudLight;
 uniform float u_NoiseScale;
+uniform mat4 u_InvLightViewProj; //only for shadow pass
 
 #define MAX_STEPS 100 // maxime
 #define MAX_STEPS_LIGHTS 6 // samples toward the sun
@@ -40,6 +41,11 @@ const float BOUND_RADIUS = 9.0; //sphere enclosing every blob + fbm margin, so w
 
 #define CLOUD_SLAB 0
 #define ACTUAL_CLOUD 1
+
+#ifndef SHADOW_PASS
+#define SHADOW_PASS 0
+#endif
+#define SHADOW_STEPS 64 //samples along each sun ray through the light camera's box
 
 //iq's polynomial smooth min
 float smoothmin(float a, float b, float k){
@@ -227,8 +233,38 @@ vec4 raymarch(vec3 rayOrigin, vec3 rayDirection, float offset){
     return vec4(lightEnergy, 1.0-totalTransmittance);
 }
 
+#if SHADOW_PASS
+//one texel = one parallel sun ray through the light camera's box
 void main(){
+    vec2 ndc = fs_UV * 2.0 - 1.0;
+    vec4 a = u_InvLightViewProj * vec4(ndc, -1.0, 1.0); //point on the light camera's near plane (sun side)
+    vec4 b = u_InvLightViewProj * vec4(ndc, 1.0, 1.0); //point on the far plane
 
+    vec3 start = a.xyz/a.w;
+    vec3 end = b.xyz/b.w;
+
+    float len = length(end-start);
+    vec3 dir = (end-start)/len; //-lightdir since we're traveling away from the sun
+    float stepSize = len/float(SHADOW_STEPS);
+
+    float totalDensity = 0.0;
+    float firstHit = 1.0; //1: ray never hits cloud, or depth where the cloud starts
+
+    for(int i = 0; i < SHADOW_STEPS; i++){
+        float t = (float(i) + 0.5) * stepSize; //sample the middle of each step
+        float d = sceneDensity(start + dir * t);
+        if(d>0.0){ 
+            if(firstHit == 1.0) firstHit = t / len; //store the first cloud sample, orthographic projection maps depth linearly
+            totalDensity += d;
+        }
+    }
+
+    float sunT = BeersLaw(totalDensity * stepSize, u_Absorption); //fraction of sunlight that exists the cloud
+    out_Col = vec4(sunT, firstHit, 0.0, 1.0);
+}
+
+#else
+void main(){
     vec3 rayOrig = u_CameraPos;
     vec3 rayDir = rayDirection(fs_UV);
 
@@ -242,3 +278,4 @@ void main(){
     //float a = fs_UV.y < 0.5 ? 0.5: 0.0;
     //out_Col = vec4(vec3(1.0)*a, a); //premultiply rgb * a
 }
+#endif

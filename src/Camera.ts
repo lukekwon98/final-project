@@ -18,7 +18,7 @@ class Camera {
   up: vec3 = vec3.fromValues(0,1,0);
   yaw: number = -90;
   pitch: number = 0;
-  moveSpeed: number = 2.0;
+  moveSpeed: number = 7.5;
   sensitivity: number = 0.15;
 
   keys: Set<string> = new Set();

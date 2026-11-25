@@ -176,13 +176,6 @@ float henyeyGreenstein(float cosTheta, float g) {
     return (1.0 - g2) / (12.56637061 * denom * sqrt(denom));
 }
 
-// One mountain range: ridge height (in dir.y units) for this compass direction (ours)
-float mountainRidge(vec2 flatDir, float freq, float height, float seed){
-    float n = fPerlin(vec3(flatDir * freq, seed));      // fractal noise around the horizon circle
-    float ridged = clamp(1.0 - abs(n) * 2.0, 0.0, 1.0); // ridged noise: |n| folds valleys up -> sharp peaks
-    return height * ridged * ridged;                    // squaring makes peaks pointier, valleys wider
-}
-
 void main()
 {
     //Background

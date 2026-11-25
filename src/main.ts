@@ -88,7 +88,7 @@ let square: Square;
 let prevTesselations: number = 5;
 let cube: Cube;
 
-const SHOW_COMET = false;
+const SHOW_COMET = true;
 const cometFront = vec3.normalize(vec3.create(), vec3.fromValues(1, -0.15, 0));
 const cometStart = vec3.fromValues(-250, 175, -300);
 let cometPos = vec3.clone(cometStart);
@@ -102,6 +102,20 @@ function lightDirection(): vec3{
   const el = controls.LightElevation * Math.PI / 180;
   const az = controls.LightAzimuth * Math.PI / 180;
   return vec3.fromValues(Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az));
+}
+
+const CLOUD_CENTER = vec3.fromValues(0,1.5,-20);
+const SHADOW_HALF = 10.0; //half-width of the ortho box >= BOUND_RADIUS so the whole chunk fits
+const SHADOW_DIST = 20.0; //light camera sits this far from the cloud toward the sun
+
+function lightViewProj(): mat4{
+  const L = lightDirection();
+  const eye = vec3.scaleAndAdd(vec3.create(), CLOUD_CENTER, L, SHADOW_DIST); //step toward the sun
+  const up = Math.abs(L[1]) > 0.99 ? vec3.fromValues(0,0,1) : vec3.fromValues(0,1,0); //avoid same vector when sun is overhead
+  
+  const view = mat4.lookAt(mat4.create(), eye, CLOUD_CENTER, up);
+  const proj = mat4.ortho(mat4.create(), -SHADOW_HALF, SHADOW_HALF, -SHADOW_HALF, SHADOW_HALF, SHADOW_DIST - SHADOW_HALF, SHADOW_DIST + SHADOW_HALF);
+  return mat4.multiply(mat4.create(), proj, view);
 }
 
 function loadScene() {
@@ -188,6 +202,9 @@ function main() {
   const sceneTarget = new RenderTarget([hdrColor()], true);
   //HDR cloud, no depth
   const cloudTarget = new RenderTarget([hdrColor()], false);
+  //sun's cloud shadow map. R is transmittance, G is entry depth, Maxime
+  const shadowTarget = new RenderTarget([hdrColor()], false);
+  shadowTarget.resize(256,256); 
 
   //computed and loaded noise textures. built/loaded once, sampled every frame
   const noiseTex = createNoiseTexture();
@@ -222,6 +239,11 @@ function main() {
   const clouds = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, fullscreenVert),
     new Shader(gl.FRAGMENT_SHADER, cloudsFrag),
+  ]);
+
+  const cloudShadow = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, fullscreenVert),
+    new Shader(gl.FRAGMENT_SHADER, cloudsFrag.replace('#version 300 es', '#version 300 es\n#define SHADOW_PASS 1')),
   ]);
 
   let time = 0;
@@ -316,6 +338,16 @@ function main() {
     clouds.setFloat('u_NoiseScale', controls.CloudNoiseScale);
     clouds.draw(screenQuad);
 
+    //shadow pass: march density along sun rays into 256^2 map
+    const lightVP = lightViewProj();
+    shadowTarget.bind();
+    cloudShadow.setMat4('u_InvLightViewProj', mat4.invert(mat4.create(), lightVP));
+    cloudShadow.setTexture('u_Noise', 0, noiseTex);
+    cloudShadow.setFloat('u_Time', time/60.0);
+    cloudShadow.setFloat('u_NoiseScale', controls.CloudNoiseScale);
+    cloudShadow.setFloat('u_Absorption', controls.CloudAbsorption);
+    cloudShadow.draw(screenQuad);
+
     //pass2 composite -> canvas
     RenderTarget.bindScreen(canvas.width, canvas.height); //back to the canvas
     gl.disable(gl.DEPTH_TEST); //no depth test needed for full screen quad
@@ -325,6 +357,7 @@ function main() {
     composite.setTexture('u_Noise', 1, noiseTex);
     composite.setTexture('u_BlueNoise', 2, blueNoise);
     composite.setTexture('u_Clouds', 3, cloudTarget.texture()); // premultiplied cloud color + opacity
+    composite.setTexture('u_CloudShadow', 4, shadowTarget.texture()); // sun's-eye shadow map
 
     composite.setMat4('u_InvViewProj', invViewProj);
     composite.setFloat('u_Exposure', controls.Exposure);
@@ -332,6 +365,9 @@ function main() {
 //    composite.setInt('u_DebugView', DEBUG_VIEWS[controls.DebugView]);
     composite.setFloat('u_Time', time);
     composite.setVec2('u_Resolution', canvas.width, canvas.height);
+    composite.setVec3('u_CameraPos', camera.position);
+    composite.setVec3('u_LightDir', lightDirection());
+    composite.setVec3('u_LightColor', vec3.fromValues(lc[0]/255, lc[1]/255, lc[2]/255));
     composite.draw(screenQuad);
 
     stats.end();

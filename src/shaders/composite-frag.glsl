@@ -15,6 +15,17 @@ uniform vec2 u_Resolution;
 uniform mat4 u_InvViewProj;
 uniform sampler2D u_Noise;
 uniform sampler2D u_Clouds; //premultiplied clouds, rgba
+uniform sampler2D u_CloudShadow; //R = sunlight transmittance through the cloud, G = entry depth
+
+//god rays
+uniform vec3 u_CameraPos;
+uniform vec3 u_LightDir;
+uniform vec3 u_LightColor;
+
+#define GOD_RAY_STEPS 50
+const float GOD_MAX_DIST = 40.0;
+const float GOD_RAY_STEP = GOD_MAX_DIST / float(GOD_RAY_STEPS);
+const float FOG_DENSITY = 0.005;
 
 //maxime heckel - 3D value noise using one lookup into a '2D' texture
 //each integer z is a 2D slice placed at offset (37, 17) *z in the texture
@@ -51,6 +62,24 @@ vec3 acesFilm(vec3 x) {
     return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
 }
 
+vec3 godRays(vec3 rayOrigin, vec3 rayDir){
+    float fogAmount = 0.0;
+    float lightIntensity = 1.0;
+    float t = GOD_RAY_STEP;
+
+    for(int i = 0; i < GOD_RAY_STEPS; i++){
+        if(t > GOD_MAX_DIST){
+            break;
+        }
+
+        //vec3 samplePos = rayOrigin + rayDir * t;
+        float attenuation = 1.0; //directional sun (every point in the air gets the same light)
+        fogAmount += attenuation * FOG_DENSITY * GOD_RAY_STEP; //light scattered toward the camera in this step, the denser the fog, the bigger the fogAmount
+        t += GOD_RAY_STEP;
+    }
+
+    return u_LightColor * fogAmount; //tint by sun's color
+}
 //final pass: hdr scene -> tone mapped -> screen, also shows debug views
 void main(){
     vec2 aspectUV = fs_UV * vec2(u_Resolution.x/u_Resolution.y, 1.0); //square texels
@@ -72,9 +101,14 @@ void main(){
         return;
     }
 
+    //debug
+    // out_Col = vec4(texture(u_CloudShadow, fs_UV).rrr,1.0);
+    // return;
+
     vec3 scene = texture(u_Scene, fs_UV).rgb;
     vec4 cloud = texture(u_Clouds, fs_UV);
-    vec3 hdr = (scene * (1.0 - cloud.a) + cloud.rgb) * u_Exposure;
+    vec3 godRay = godRays(u_CameraPos, rayDirection(fs_UV));
+    vec3 hdr = (scene * (1.0 - cloud.a) + cloud.rgb + godRay) * u_Exposure;
 
     vec3 col;
     if(u_Tonemap == 2){
