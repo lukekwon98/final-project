@@ -43,7 +43,7 @@ const float SHAFT_LENGTH = 50.0; //how far the shaft reaches from the cloud
 #define PI 3.14159265359
 
 //maxime heckel - 3D value noise using one lookup into a '2D' texture
-//each integer z is a 2D slice placed at offset (37, 17) *z in the texture
+//each integer z is a 2D slice placed at offset (37, 17)*z in the texture
 //due to the shift, G holds slice z and R holds slice z+1 at the same spot - one lookup gives both slices and we blend them
 float noise(vec3 x){
     vec3 p = floor(x); //integer grid idx
