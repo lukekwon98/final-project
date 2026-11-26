@@ -29,7 +29,7 @@ const float GOD_MAX_DIST = 40.0;
 const float GOD_RAY_STEP = GOD_MAX_DIST / float(GOD_RAY_STEPS);
 const float FOG_DENSITY = 0.03;
 const float GOD_ANISO = 0.3; //HG g for the air, >0 means forward scattering, maxime
-const float GOD_INTENSITY = 1.0; //maxime's light intesnity
+const float GOD_INTENSITY = 12.6; //maxime's light intesnity
 #define FOG_OCTAVES 3
 const float FOG_NOISE_AMP = 0.01;
 const float FOG_NOISE_MULT = 10.0;
@@ -39,6 +39,8 @@ const vec3 CLOUD_CENTER = vec3(0.0, 1.5, -20.0);
 const float SHAFT_RADIUS = 12.0; //tube radius: wider than cloud
 const float SHAFT_SOFT = 8.0; //soft fade at the tube wall (no visible tube)
 const float SHAFT_LENGTH = 50.0; //how far the shaft reaches from the cloud
+
+#define PI 3.14159265359
 
 //maxime heckel - 3D value noise using one lookup into a '2D' texture
 //each integer z is a 2D slice placed at offset (37, 17) *z in the texture
@@ -103,7 +105,7 @@ float HGPhase(float mu){
     float gg = g * g;
     float denom = max(1.0 + gg - 2.0 * g * mu, 0.0001); //avoid divison by zero when mu, g = 1
 
-    return (1.0 - gg) / pow(denom, 1.5);
+    return  (1.0 / (4.0 * PI)) * (1.0 - gg) / pow(denom, 1.5);
 }
 
 //fog volume, a tube around the sun ray
